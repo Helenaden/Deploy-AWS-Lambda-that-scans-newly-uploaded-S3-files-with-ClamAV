@@ -1,0 +1,8 @@
+# Terraform
+.terraform
+.terraform.lock.hcl
+*.tfstate
+*.tfstate.backup
+*.tfvars
+# This is a good practice to avoid exposing your AWS credentials if you're using them.
+.aws/credentials
