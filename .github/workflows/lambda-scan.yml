@@ -1,0 +1,83 @@
+# This workflow uses OpenID Connect (OIDC) to securely authenticate with AWS.
+# It eliminates the need to store long-lived AWS Access Keys as GitHub secrets.
+
+name: 'Lambda Scan CI/CD'
+
+on:
+  workflow_dispatch: # Manually trigger the workflow from the Actions tab in GitHub.
+
+#on:
+  #push:
+    #branches:
+      #- main
+# Define a concurrency group to cancel older, in-progress runs when a new one starts.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+# Grant the GitHub Actions runner permissions to get an ID token.
+permissions:
+  id-token: write  # This is crucial for OIDC authentication
+  contents: read
+
+jobs:
+  terraform:
+    name: 'Terraform Plan and Apply'
+    runs-on: ubuntu-latest
+    
+    steps:
+      # Step 1: Checkout the repository code.
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # Step 2: Configure AWS credentials using OIDC.
+      # This action assumes an IAM role in your AWS account using a short-lived token.
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          # The IAM role ARN to assume.
+          # We now use the GitHub secret for the AWS account ID.
+          role-to-assume: 'arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GitHubActionsRole'
+          # Use the repository variable for the AWS region.
+          aws-region: ${{ vars.AWS_REGION }}
+
+      # Step 3: Install the latest version of Terraform.
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.12.2
+
+      # Step 4: Inject sensitive variables from a GitHub Secret.
+      - name: Create tfvars file from secret
+        env:
+          TF_VARS: ${{ secrets.TF_VARS_CONTENT }}
+        run: echo "$TF_VARS" > terraform.tfvars
+
+      # Step 5: Initialize the Terraform project.
+      - name: Terraform Init
+        id: init
+        run: terraform init
+
+      # Step 6: Run Checkov to scan for IaC security vulnerabilities.
+      - name: Run Checkov
+        id: checkov
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          framework: terraform
+          directory: '.'
+        continue-on-error: true
+
+      # Step 7: Validate the Terraform code.
+      - name: Terraform Validate
+        id: validate
+        run: terraform validate
+
+      # Step 8: Create a Terraform plan.
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -no-color -var-file=terraform.tfvars
+
+      # Step 9: Apply the Terraform plan.
+      - name: Terraform Apply
+        if: github.ref == 'refs/heads/main'
+        run: terraform apply -auto-approve -var-file=terraform.tfvars
