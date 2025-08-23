@@ -26,6 +26,18 @@ resource "aws_api_gateway_method" "get_presigned_url_method_with_filename" {
   authorization = "NONE"
 }
 
+# Method settings for caching
+resource "aws_api_gateway_method_settings" "cache_settings" {
+  rest_api_id = aws_api_gateway_rest_api.presigner_api.id
+  stage_name  = aws_api_gateway_stage.prod_stage.stage_name
+  method_path = "*/*"
+
+  settings {
+    caching_enabled = true
+    cache_ttl_in_seconds = 300
+  }
+}
+
 # Update integration to use filename resource
 resource "aws_api_gateway_integration" "lambda_integration_with_filename" {
   rest_api_id = aws_api_gateway_rest_api.presigner_api.id
@@ -64,11 +76,36 @@ resource "aws_api_gateway_deployment" "api_deployment" {
   }
 }
 
+# CloudWatch Log Group for API Gateway
+resource "aws_cloudwatch_log_group" "api_gateway_logs" {
+  name              = "API-Gateway-Execution-Logs_${aws_api_gateway_rest_api.presigner_api.id}/prod"
+  retention_in_days = 7
+}
+
 # Create a separate stage resource that links to the deployment.
 resource "aws_api_gateway_stage" "prod_stage" {
   stage_name    = "prod"
   rest_api_id   = aws_api_gateway_rest_api.presigner_api.id
   deployment_id = aws_api_gateway_deployment.api_deployment.id
+
+  cache_cluster_enabled = true
+  cache_cluster_size    = "0.5"
+
+  access_log_settings {
+    destination_arn = aws_cloudwatch_log_group.api_gateway_logs.arn
+    format = jsonencode({
+      requestId      = "$context.requestId"
+      ip             = "$context.identity.sourceIp"
+      caller         = "$context.identity.caller"
+      user           = "$context.identity.user"
+      requestTime    = "$context.requestTime"
+      httpMethod     = "$context.httpMethod"
+      resourcePath   = "$context.resourcePath"
+      status         = "$context.status"
+      protocol       = "$context.protocol"
+      responseLength = "$context.responseLength"
+    })
+  }
 }
 
 
