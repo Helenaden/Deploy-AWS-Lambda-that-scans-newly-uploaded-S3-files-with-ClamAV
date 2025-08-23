@@ -52,6 +52,7 @@ jobs:
         env:
           TF_VARS: ${{ secrets.TF_VARS_CONTENT }}
         run: echo "$TF_VARS" > terraform.tfvars
+        working-directory: ./terraform
 
       # Step 5: Initialize the Terraform project.
       - name: Terraform Init
