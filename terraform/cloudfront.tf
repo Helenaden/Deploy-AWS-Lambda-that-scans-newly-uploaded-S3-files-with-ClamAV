@@ -18,6 +18,20 @@ resource "aws_s3_bucket_public_access_block" "cloudfront_logs_pab" {
   restrict_public_buckets = true
 }
 
+resource "aws_s3_bucket_ownership_controls" "cloudfront_logs_ownership" {
+  bucket = aws_s3_bucket.cloudfront_logs.id
+
+  rule {
+    object_ownership = "BucketOwnerPreferred"
+  }
+}
+
+resource "aws_s3_bucket_acl" "cloudfront_logs_acl" {
+  depends_on = [aws_s3_bucket_ownership_controls.cloudfront_logs_ownership]
+  bucket     = aws_s3_bucket.cloudfront_logs.id
+  acl        = "private"
+}
+
 # ----------------------------
 # S3 Bucket for Website Files
 # ----------------------------
