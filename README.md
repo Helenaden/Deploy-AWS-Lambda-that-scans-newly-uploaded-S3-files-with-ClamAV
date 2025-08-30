@@ -5,7 +5,7 @@ Amazon S3 has become the backbone of countless applications on AWS. Its scalabil
 
 But with great flexibility comes a serious challenge: **untrusted file uploads**.  
 
-When files come from external users, customers, or third-party partners, there’s always a chance they contain malware, ransomware, or viruses. If those files are downloaded by internal teams or downstream users, the consequences can be severe, system compromise, data breaches, reputational damage, and financial loss.  
+When files come from external users, customers, or third-party partners, there’s always a chance they contain malware, ransomware, or viruses. If those files are downloaded by internal teams or downstream users, the consequences can be severe; system compromise, data breaches, reputational damage, and even financial loss.  
 
 The solution to this challenge is to scan every file on upload without slowing users, breaking apps, or racking up costs.
 And that’s exactly what this project delivers: secure, scalable malware scanning, invisible to the end user, and cost-effective.
