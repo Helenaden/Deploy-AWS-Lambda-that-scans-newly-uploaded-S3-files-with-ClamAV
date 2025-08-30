@@ -1,7 +1,7 @@
 # Serverless File Scanning with AWS & ClamAV
 
 ## Why This Project Matters
-Amazon S3 has become the backbone of countless applications on AWS. Its scalability, durability, and ease of use make it the go-to storage layer for everything from web apps to enterprise data lakes.  
+Amazon S3 has become the backbone of countless applications on AWS. Its scalability, durability, and ease of use make it the go-to storage layer for many applications hosted on Amazon Web Services (AWS).  
 
 But with great flexibility comes a serious challenge: **untrusted file uploads**.  
 
